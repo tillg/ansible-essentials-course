@@ -1,0 +1,23 @@
+version: '3'
+services:
+  controller:
+    build:
+      context: ./
+      dockerfile: Dockerfile-controller
+    restart: always
+    command: bash
+    depends_on:
+      - lb
+      - web1
+      - web2
+      - db
+    ports:
+      - '22:22'
+  lb:
+    image: 'centos:8'
+  web1:
+    image: 'centos:8'
+  web2:
+    image: 'centos:8'
+  db:
+    image: 'centos:8'

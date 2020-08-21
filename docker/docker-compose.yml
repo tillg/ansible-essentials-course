@@ -1,11 +1,12 @@
 version: '3'
 services:
   controller:
+    container_name: controller
     build:
       context: ./
       dockerfile: Dockerfile-controller
     restart: always
-    command: bash
+    command: tail -F anything
     depends_on:
       - lb
       - web1
@@ -14,10 +15,18 @@ services:
     ports:
       - '22:22'
   lb:
+    container_name: lb
     image: 'centos:8'
+    command: tail -F anything
   web1:
+    container_name: web1
     image: 'centos:8'
+    command: tail -F anything
   web2:
+    container_name: web2
     image: 'centos:8'
+    command: tail -F anything
   db:
+    container_name: db
     image: 'centos:8'
+    command: tail -F anything

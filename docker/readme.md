@@ -19,6 +19,6 @@ To connect to the controller via a terminal:
 docker exec -it controller bash
 ```
 
-## problems & solutions
+## Problems & Solutions
 
 * When launching the docker network **the containers start and stop immediatly**. It turns out, that to keep them running we just have to add a command that keeps them _busy_: `command: tail -F anything` Found the solution [here](https://stackoverflow.com/questions/38546755/docker-compose-keep-container-running/45450456).

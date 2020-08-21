@@ -29,3 +29,13 @@ The `ansible.cfg` file is in `/etc/ansible/ansible.cfg`. It points to our hosts 
 * `ansible.cfg` in the current dir. This is what we are using, so we need to make sure we alsways start ansible commends from whithin `/home/ansible`
 * `~/.ansible.cfg` a hidden file in the home dir
 * `/etc/ansible/ansible.cfg` 
+
+## Section 3: Ansible Ad-Hoc Commands
+
+Ansible modules are listed [here](https://docs.ansible.com/ansible/latest/modules/modules_by_category.html)(by category)
+
+### Problem: SSH Connection
+
+The controller docker cannot ssh into the other dockers. And this is needed, even for the Ansible ping module (as the ping module creates a SSH connection - instead of actually pinging...).
+
+So I replaced the blank CentOS docker images with a [docker image that contains the SSH service](https://hub.docker.com/r/jdeathe/centos-ssh) - but the SSH service needs additional installing of SSH keys...

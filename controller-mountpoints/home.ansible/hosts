@@ -6,7 +6,7 @@ web1 ansible_host=web1
 web2 ansible_host=web2
 
 [lb]
-lb ansible_host=lb
+lb1 ansible_host=lb1
 
 [db]
-db1 ansible_host=db
+db1 ansible_host=db1

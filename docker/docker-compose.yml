@@ -8,28 +8,29 @@ services:
     restart: always
     command: tail -F anything
     depends_on:
-      - lb
+      - lb1
       - web1
       - web2
-      - db
+      - db1
     ports:
       - '22:22'
     volumes:
       - ../controller-mountpoints/home.ansible:/home/ansible
       - ../controller-mountpoints/etc.ansible:/etc/ansible
-  lb:
-    container_name: lb
-    image: 'centos:8'
+  lb1:
+    container_name: lb1
+    image: 'jdeathe/centos-ssh:2.6.1'
     command: tail -F anything
+
   web1:
     container_name: web1
-    image: 'centos:8'
+    image: 'jdeathe/centos-ssh:2.6.1'
     command: tail -F anything
   web2:
     container_name: web2
-    image: 'centos:8'
+    image: 'jdeathe/centos-ssh:2.6.1'
     command: tail -F anything
-  db:
-    container_name: db
-    image: 'centos:8'
+  db1:
+    container_name: db1
+    image: 'jdeathe/centos-ssh:2.6.1'
     command: tail -F anything

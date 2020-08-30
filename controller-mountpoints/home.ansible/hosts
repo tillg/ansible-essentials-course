@@ -1,12 +1,15 @@
+[all:vars]
+ansible_password=root
+
 [control]
 controller ansible_connection=local
 
 [web]
-web1 ansible_host=web1
+web1 ansible_host=web1 
 web2 ansible_host=web2
 
 [lb]
-lb1 ansible_host=lb1
+lb1 ansible_host=lb1 
 
 [db]
-db1 ansible_host=db1
+db1 ansible_host=db1 

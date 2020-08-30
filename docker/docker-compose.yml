@@ -6,7 +6,6 @@ services:
       context: ./
       dockerfile: Dockerfile-controller
     restart: always
-    command: tail -F anything
     depends_on:
       - lb1
       - web1
@@ -19,18 +18,23 @@ services:
       - ../controller-mountpoints/etc.ansible:/etc/ansible
   lb1:
     container_name: lb1
-    image: 'jdeathe/centos-ssh:2.6.1'
-    command: tail -F anything
+    build:
+      context: ./
+      dockerfile: Dockerfile-node
 
   web1:
     container_name: web1
-    image: 'jdeathe/centos-ssh:2.6.1'
-    command: tail -F anything
+    build:
+      context: ./
+      dockerfile: Dockerfile-node
   web2:
     container_name: web2
-    image: 'jdeathe/centos-ssh:2.6.1'
-    command: tail -F anything
+    build:
+      context: ./
+      dockerfile: Dockerfile-node
+
   db1:
     container_name: db1
-    image: 'jdeathe/centos-ssh:2.6.1'
-    command: tail -F anything
+    build:
+      context: ./
+      dockerfile: Dockerfile-node

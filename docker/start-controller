@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Start ssh service and allow root to login
+mkdir /run/sshd
+/usr/sbin/sshd -o "PermitRootLogin yes"
+
+# Next line is just so the docker engine 
+# doesn't shut down right away after starting.
+tail -F anything

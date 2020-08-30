@@ -4,10 +4,9 @@ RUN apt-get -y upgrade
 RUN apt-get -y install systemd
 RUN apt-get -y install openssh-client
 RUN apt-get -y install openssh-server
-RUN apt-get -y install ansible
 
-# We need this since we want to login to other via ssh using pw
-RUN apt-get -y install sshpass
+# Ansible needs python on the nodes it wants to control
+RUN apt-get -y install python
 
 #### For dev purposes ####
 # Set root as pw for root user
@@ -15,6 +14,6 @@ RUN echo "root:root" | chpasswd
 RUN apt-get -y install nano
 
 # Place and run our specific start script
-COPY ./start-controller /bin/start
+COPY ./start-node /bin/start
 
 CMD ["/bin/start"]

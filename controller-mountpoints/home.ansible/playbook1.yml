@@ -1,0 +1,12 @@
+---
+- name: my first play
+  hosts: web
+  tasks:
+    - name: Ping
+      ping:
+    - name: Show hostname
+      command: hostname
+    - name: Install apache web server
+      package:
+        name: apache2
+        state: present

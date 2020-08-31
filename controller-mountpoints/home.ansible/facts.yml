@@ -1,0 +1,6 @@
+---
+- hosts: web1
+  tasks:
+    - name: Get facts
+      debug:
+        msg: "From ansible_factzs: {{ ansible_facts.env.SSH_CONNECTION }}  Distro: {{ansible_facts['distribution']}}"

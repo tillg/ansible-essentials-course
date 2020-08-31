@@ -50,8 +50,9 @@ Ansible modules are listed [here](https://docs.ansible.com/ansible/latest/module
 To start the docker compose network and run some ad hoc commands:
 
 ```bash
+cd docker
 docker-compose up
-exec -it controller bash
+docker exec -it controller bash
 
 ansible all -m ping
 
@@ -111,4 +112,67 @@ Helpful commands:
 - Tasks are tasks that are performed by Ansible 😂
 - We describe tasks by _the state that should be achieved after execution_.
 - In the course they mention a lot the `yum` module to install packages. Since I don't use CentOS but Ubuntu, I need to use `apt` instead. But it seems smart to use the more abstract `package` module that is available since Ansible 2. For an example see (here)[https://serverfault.com/questions/587727/how-to-unify-package-installation-tasks-in-ansible].
--
+
+### Playbooks
+
+- Playbooks are made out of plays - duuuh...
+
+To start the docker compose network and run some ad hoc commands:
+
+```bash
+cd docker
+docker-compose up
+docker exec -it controller bash
+
+# Go to the dir where we have the playbook
+cd /home/ansible/
+
+# Check the syntax of the playbook
+ansible-playbook playbook1.yml --syntax-check
+
+# Do a dry run
+ansible-playbook playbook1.yml --check
+
+# If you want to read more details
+ansible-playbook playbook1.yml --check -v#
+
+#...even mnore details:
+ ansible-playbook playbook1.yml -C -vv
+
+ # Run it for real:
+ ansible-playbook playbook1.yml
+
+# Run it and see all the SSH communication:
+ansible-playbook playbook1.yml -vvv
+```
+
+### Setup module / Host facts
+
+There is a `setup` module that gathers facts about hosts. That's what ansible runs at tghe beginning of the playbooks.
+
+Some examples:
+
+```bash
+ansible web1 -m setup -a "filter=ansible_os_family"
+
+#Result would be (in our case, running on Ubuntu)
+web1 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_os_family": "Debian"
+    },
+    "changed": false
+}
+```
+
+Some intersting variables provided by the setup module:
+
+![Setup module variable](ansible-facts.png)
+
+The setup module is pre-pended to every playbook by default. It's reported as _Gathering facts_. As gathering facts might take quite some time, you can disable it for a playbook like so:
+
+```yaml
+- hosts: all
+  gather_facts: false
+  tasks:
+     - name: ...
+```

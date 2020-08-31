@@ -98,4 +98,17 @@ Helpful commands:
 - Check if ssh deamon is running: `service ssh status`
 - Start ssh deamon: `service ssh start`
 - What Linux version am I using?: `lsb_release -a`
+
+## Section 4: Ansible Playbooks
+
+### YAML
+
+- Good practice: Use 2 spaces for indentation, don't use tabs.
+- I use the YAML VScode extension (YAML Language Support by Red Hat)
+
+### Tasks
+
+- Tasks are tasks that are performed by Ansible 😂
+- We describe tasks by _the state that should be achieved after execution_.
+- In the course they mention a lot the `yum` module to install packages. Since I don't use CentOS but Ubuntu, I need to use `apt` instead. But it seems smart to use the more abstract `package` module that is available since Ansible 2. For an example see (here)[https://serverfault.com/questions/587727/how-to-unify-package-installation-tasks-in-ansible].
 -

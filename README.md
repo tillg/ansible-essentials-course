@@ -176,3 +176,37 @@ The setup module is pre-pended to every playbook by default. It's reported as _G
   tasks:
      - name: ...
 ```
+
+### Package module 
+
+In the course they use the `yum` module, but since we are on a Debian based environment...
+
+The docume ntation of the package module [is here](https://docs.ansible.com/ansible/latest/modules/package_module.html). Note: It seems way easier than the yum module 😂
+
+Run the stuff:
+
+```bash
+cd docker
+docker-compose up &
+docker exec -it controller bash
+
+cd /home/ansible
+
+# Check our playbook
+ansible-playbook web.yml --syntax-check
+
+# Run it
+ansible-playbook web.yml 
+```
+
+### Service Module
+
+The service module is used to start, stop services.
+
+```bash
+# Get help about ansible modules on the command line:
+# ansible-doc <module>
+ansible-doc service
+```
+
+Check if the web server runs by pointing your browser to it: On your host machine, got to [http://localhost:1011/](http://localhost:1011/)

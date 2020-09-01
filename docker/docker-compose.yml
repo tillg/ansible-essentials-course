@@ -21,17 +21,24 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-node
+    ports:
+      - '1001:80'
+
 
   web1:
     container_name: web1
     build:
       context: ./
       dockerfile: Dockerfile-node
+    ports:
+      - '1011:80'
   web2:
     container_name: web2
     build:
       context: ./
       dockerfile: Dockerfile-node
+    ports:
+      - '1012:80'
 
   db1:
     container_name: db1

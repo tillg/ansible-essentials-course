@@ -13,6 +13,7 @@ RUN apt-get -y install sshpass
 # Set root as pw for root user
 RUN echo "root:root" | chpasswd
 RUN apt-get -y install nano
+RUN apt-get -y install curl
 
 # Place and run our specific start script
 COPY ./start-controller /bin/start

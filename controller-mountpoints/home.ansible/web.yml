@@ -2,10 +2,13 @@
 ---
 - hosts: web
   tasks:
-    - name: Install Apache
+    - name: Install packages
       package:
-        name: apache2
+        name: "{{item}}"
         state: present
+      loop:
+        - apache2
+        - php
     - name: Start apache server
       service:
         name: apache2
@@ -13,9 +16,20 @@
         enabled: yes
     - name: Copy using inline data
       copy:
-        src: /home/ansible/files/index.html
+        src: "{{ item }}"
         dest: /var/www/html/
         owner: root
         group: root
         mode: 0644
         backup: yes
+      loop:
+        - files/index.html
+        - files/index.php
+    - name: Delete index.html
+      file:
+        path: /var/www/html/index.html
+        state: absent
+    - name: Restart apache
+      service:
+        name: apache2
+        state: restarted

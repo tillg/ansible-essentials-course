@@ -210,3 +210,89 @@ ansible-doc service
 ```
 
 Check if the web server runs by pointing your browser to it: On your host machine, got to [http://localhost:1011/](http://localhost:1011/)
+
+### Loops
+
+A sample loop:
+
+```yaml
+- name: Copy using inline data
+    copy:
+    src: "{{ item }}"
+    dest: /var/www/html/
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+    loop:
+    - files/index.html
+    - files/index.php
+```
+
+Alternative use `with_<lookup>` like so:
+
+![With Items loop](ansible_with_items_sample.png)
+
+Possible `with_<something>` loops are:
+
+![With-something loops](ansible_with_lookup.png)
+
+The recommended way to install multiple packages (and other ways are often suggested when searching Google):
+
+![How to install multiple Packages](ansible_multi-paket_recommendation.png)
+ 
+ **Note:** I still used the `loop` construction, since I used the `package` module (that doesn't allow to list multiple packages)
+
+ Check if copying the php file, ionstalling & restarting all the services worked by checking [the web server on web2](http://localhost:1012/index.php)
+
+ ### Variables
+
+* Variables alwas start with a letter
+* Variables conatin letters, numbers, underscores
+* What doesn't work are dashes, dots...
+
+The `debug` module is great for checking variables:
+
+```YAML
+- name: Output variable hello
+  debug:
+    msg: "{{ hello }}"
+```
+
+Variables can also be **lists**:
+
+```YAML
+vars:
+  countries: [Korea, China, Russia, India]
+
+# or:
+
+vars:
+  countries:
+  - Korea
+  - China
+  - Russia
+  - India
+```
+Variables can also be **dictionaries**:
+
+```YAML
+- hosts: web1
+  vars:
+    USA: { Capital: 'Washington DC', Continent: 'NA',President: 'Donald Trump' }
+  tasks:
+  - name: Ansible Dictionary output items
+    debug:
+      msg: "{{ USA.President }} is equivalent to  {{ USA['President'] }}"
+    loop: "{{ USA|dict2items }}"```
+  - name: Ansible Dictionary dict2Item
+    debug:
+      msg: "Key is {{ item.key }} value is {{ item.value}}"
+    loop: "{{ USA|dict2items }}"
+```
+
+This is what is actually happening here:
+
+![dict2items](ansible-dict2items.png)
+
+

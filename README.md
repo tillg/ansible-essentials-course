@@ -84,22 +84,6 @@ ansible web1 -m setup
 ansible all  -m setup -a "filter=ansible_memtotal_mb"
 ```
 
-### Problem: SSH Connection
-
-The controller docker at first could not ssh into the other dockers. And this is needed, even for the Ansible ping module (as the ping module creates a SSH connection - instead of actually pinging...).
-
-**Solution**
-I replaced the CentOS docker images with a Ubuntu image, as I know more about Ubuntu. Then I created Dockerfiles for the controller and for the nodes that make sure that the SSH server and all the needed packages are installed. I also created start scripts that start the SSH server with the parameters needed (i.e. root user can login via ssh).
-
-**Careful**, I changed the password of root users to `root` to make things easier. But it's not safe! 🤞
-
-Helpful commands:
-
-- See what services are running: `service --status-all`
-- Check if ssh deamon is running: `service ssh status`
-- Start ssh deamon: `service ssh start`
-- What Linux version am I using?: `lsb_release -a`
-
 ## Section 4: Ansible Playbooks
 
 ### YAML

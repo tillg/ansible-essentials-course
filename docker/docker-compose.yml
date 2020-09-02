@@ -6,6 +6,7 @@ services:
       context: ./
       dockerfile: Dockerfile-controller
     restart: always
+    hostname: 'controller-host'
     depends_on:
       - lb1
       - web1
@@ -21,6 +22,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-node
+    hostname: 'lb1-host'
     ports:
       - '1001:80'
 
@@ -30,6 +32,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-node
+    hostname: 'web1-host'
     ports:
       - '1011:80'
   web2:
@@ -37,11 +40,13 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-node
+    hostname: 'web2-host'
     ports:
       - '1012:80'
 
   db1:
     container_name: db1
+    hostname: 'db1-host'
     build:
       context: ./
       dockerfile: Dockerfile-node

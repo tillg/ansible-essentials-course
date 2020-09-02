@@ -295,4 +295,122 @@ This is what is actually happening here:
 
 ![dict2items](ansible-dict2items.png)
 
+There are many different places where you can declare variables (sorted by precedence):
+
+![Ways to declare variables](ansible_where_to_decrae_vars.png)
+
+* In a playbook in a `vars:` section
+* In a playbook as external variables file:
+
+```YAML
+- hosts: web1
+  vars_files:
+  - /vars/eternal_vars.yml
+  tasks:
+  ...
+
+# vars/external_vars.yml
+somewhar: somevalue
+password: magic
+```
+
+* In a file per host:
+
+```YAML
+- hosts: all
+  include_vars: "{{ ansible_hostname }}.yml"
+  tasks:
+```
+
+* Thru a user prompt:
+
+```YAML
+- hosts: web
+  gather_facts: false
+  vars_prompt:
+  - name: "version"
+    prompt: "Which version do you want to install?"
+  tasks:
+  - name: Ansible prompt example.
+    debug:
+      msg: "will install httpd-{{ version }}"
+  - name: install specific apache version
+    yum: 
+      name: "httpd-{{ version }}"
+      state: present 
+```
+
+* Inventory variables:
+  * Defined in the inventory file
+  * Files located under `group_vars` and `host_vars` folder. 
+  * Each file should be named after the host or group it belongs to.
+  * Define site wide defaults inside `group_vars/all` file.
+  * If the `group_vars` and `host_vars`folders are located in the same folder as the inventory (`hsosts`file), they apply also to ad hoc commands. Place the in the same directory as playbooks to make them available to playbooks only.
+
+```YAML
+# File group_vars/web
+vhost_config_file: /etc/httpd/conf.d/ansible.conf
+apache_config_file: /etc/httpd/conf/httpd.conf
+document_root_path: /var/www/ansible/
+repository: https://github.com/uguroktay/ansible_essentials.git
+check_interval: 1
+```
+
+```YAML
+# file: ansible/group_vars/all
+# This is the site wide default
+ntp_server: default-time.example.com
+apache_port: 80
+```
+```YAML
+# file: ansible/group_vars/europe
+# This is the default for the group named europe
+ntp_server: europe-time.example.com
+apache_port: 8080
+```
+```YAML
+# file: ansible/host_vars/web1
+# This is the default for host web1
+ntp_server: bucharest.example.com
+apache_port: 80
+```
+
+* Set variables on the command line
+
+```bash
+# Launch a ansible playbook like so:
+ansible-playbook extravars.yml --extra-vars "my_message='extra vars are powerful' other_var='something else'"
+```
+
+### Variables precendence
+
+**Rule**: Avoid defining the same variable at different places!
+
+Ansible has 3 main scopes:
+* Global: This is set by config, environment variables and the command line
+* Play
+* Host
+
+### Lineinfile module
+
+**Target**: Have a playbook that updates /etc/hosts file
+
+```YAML
+---
+- name: common tasks
+  hosts: all
+  become: true
+  tasks:
+    - name: update/etc/hosts file
+      lineinfile:
+        path: "{{ hostsfile }}"
+        regexp: "{{ item }}$"
+        line: "{{ hostvars[item].ansible_facts.eth1.ipv4.address }} {{ hostvars[item].ansible_facts.hostname }}.{{ domainname }} {{ hostvars[item].ansible_facts.hostname }}"
+      loop: "{{ groups['all'] }}"
+```
+```YAML
+# file: group_vars/all
+domainname: "testdomain.com"
+hostsfile: "/etc/hosts"
+```
 

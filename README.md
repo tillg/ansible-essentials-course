@@ -398,3 +398,4 @@ domainname: "testdomain.com"
 hostsfile: "/etc/hosts"
 ```
 
+### Apache Virtual Hosts configuration

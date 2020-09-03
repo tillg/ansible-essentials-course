@@ -6,4 +6,4 @@ mkdir /run/sshd
 
 # Next line is just so the docker engine 
 # doesn't shut down right away after starting.
-tail -F anything
+sleep infinity

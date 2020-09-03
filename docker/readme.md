@@ -33,7 +33,9 @@ So to see what web2 serves, point your browser to [http://localhost:1012/](http:
 
 When launching the docker network the containers start and stop immediatly. 
 
-**Solution** It turns out, that to keep them running we just have to add a command that keeps them _busy_: `command: tail -F anything` Found the solution [here](https://stackoverflow.com/questions/38546755/docker-compose-keep-container-running/45450456).
+**Solution** In the start sequence of the container we simply add a `sleep infinity` statment - that keeps hiom alive 😀
+
+**Solution (bad)** It turns out, that to keep them running we just have to add a command that keeps them _busy_: `command: tail -F anything` Found the solution [here](https://stackoverflow.com/questions/38546755/docker-compose-keep-container-running/45450456). This solution is very hacky and produces cluttered output, therefore I replaced it.
 
 ### SSH Connection
 
@@ -49,3 +51,17 @@ Helpful commands:
 * Check if ssh deamon is running: `service ssh status`
 * Start ssh deamon: `service ssh start`
 * What Linux version am I using?: `lsb_release -a`
+
+### Accessing containers via IP 
+
+I want to access my containers via individual IP addresses from my host, my host being a Mac. 
+
+**Solution** After some trying and reading, I found out that I simply cannot:
+
+**Per-container IP addressing is not possible**
+
+The docker (Linux) bridge network is not reachable from the macOS host.
+
+I found this in the Docker documentation [Networking features in Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/networking/).
+
+So the best work around is exposing certain ports that allow me to work with specific services on my containers.

@@ -377,6 +377,11 @@ Ansible has 3 main scopes:
 
 ### Lineinfile module
 
+* This module ensures a particular line is in a file, or replace an existing line using a back-referenced regular expression.
+* This is primarily useful when you want to change a single line in a file only.
+* See the [docs with valuable examples](https://docs.ansible.com/ansible/latest/modules/lineinfile_module.html).
+
+
 **Target**: Have a playbook that updates /etc/hosts file
 
 ```YAML
@@ -398,4 +403,351 @@ domainname: "testdomain.com"
 hostsfile: "/etc/hosts"
 ```
 
-### Apache Virtual Hosts configuration
+### Handlers
+
+Handlers are just like regular tasks in an Ansible playbook (see Tasks) but are only run if the Task contains a notify directive and also indicates that it changed something.
+
+In our sample playbook we restart the appache service no matter what happened before. If we run the playbook twice, the second time the apache server is restarted - even though no changes were introduced and we wouldn't need to restart it. Therefore our playbook is not idempotent, and we want them to be.
+
+Handlers to the rescue: A tasks might `notify` a handler when (and only when) something was changed. 
+
+In our sample:
+
+```YAML
+
+    - name: Copy vhost config
+      copy:
+        src: files/ansible_site.conf
+        dest: "{{ vhost_config_file }}"
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart apache # !!
+
+  handlers:
+    - name: restart apache
+      service:
+        name: httpd
+        state: restarted
+```
+
+#### Summary
+
+* Handlers are like other regular tasks but they only execute when notified by a change.
+* Handlers are referenced by their name that must  be globally unique
+* Regardless of how many tasks notify a handler, it will only run once after all the tasks complete in a particular play
+* A task can call multiple handlers
+
+### Error Handling
+
+* When a task fails on a remote machine, processing stops fo that host in Ansible.
+
+A sample on how to check if the Apache configuration file is valid: In order to check the config file on the host running the httpd service you would run `httpd -t`. So the Ansible task that checks it would look like this:
+
+```YAML
+    - name: Check configuration file
+      command: httpd -t
+```
+
+If this task fails, Ansible stops the execution right there. But: the configuration file is broken already, so subsequent httpd starts would fail.
+
+In order to deal with errors, we need to store the result in a variable. That's done with `register`:
+
+```YAML
+    - name: Check configuration file
+      command: httpd -t
+      register: result
+```
+
+Now we can react to the value of `result`:
+
+```YAML
+    - name: Informing user and ending playbook
+      fail: 
+        msg: "Config file was not invalid. Aborting"
+      when: result is failed
+```
+Note that `fail` has the same function as `debug` and then stops the executioon of the playbook.
+
+Ther's a catch thow: When the `httpd -t` command fails, the playbook execution is aborted, so it doesn't even get to the `fail` module. To remedy this, there is the `ignore_errors` options:
+
+```YAML
+    - name: Check configuration file
+      command: httpd -t
+      register: result
+      ignore_error: yes
+    - name: Informing user and ending playbook
+      fail: 
+        msg: "Config file was not invalid. Aborting"
+      when: result is failed
+```
+
+### Blocks
+
+Most of what you can apply to a single task (with the exception of loops) can be applied at the Blocks level, which also makes it much easier to set data or directives common to the tasks. 
+
+```YAML
+tasks:
+  - name: Install,configure and start apache
+    block:
+    - name: install bar and foo
+      yum:
+        name: bar, foo
+        state: present
+    - name: apply config for foo
+      template: 
+        src: teamplates/src.j2
+        dest: /etc/foo.conf
+    - name: start bar
+      service:
+        name: bar
+        state: started
+        enabled: true
+    when: ansible_facts['distribution']  == 'CentOS'
+    become: true
+    become_user: root
+    ignore_errors: yes
+```
+
+Blocks also introduce the ability to handle errors in a way similar to exceptions in most programming languages. Blocks only deal with *failed* status of a task. A bad task definition or an unreachable host are not *rescuable* errors:
+
+```YAML
+tasks:
+- name: Handle the error
+  block:
+    - debug:
+        msg: 'I execute normally'
+    - name: i force a failure
+      command: /bin/false
+    - debug:
+        msg: 'I never execute, due to the above task failing, :-('
+  rescue:
+    - debug:
+        msg: 'I caught an error, can do stuff here to fix it, :-)'
+```
+This will *revert* the failed status of the outer `block` task for the run and the play will continue as if it had succeeded.
+
+#### Always and Rescue Sections
+
+
+The rescue section comes in very hadny as well: It executes only when a task ion the bvlock fails.
+
+```YAML
+tasks:
+- name: Handle the error
+  block:
+    - debug:
+        msg: 'I execute normally'
+    - name: i force a failure
+      command: /bin/false
+    - debug:
+        msg: 'I never execute, due to the above task failing, :-('
+  rescue:
+    - debug:
+        msg: 'I caught an error, can do stuff here to fix it, :-)'
+```
+
+There is also an always section, that will run no matter what the task status is.
+
+```YAML
+- name: Always do X
+   block:
+     - debug:
+         msg: 'I execute normally'
+     - name: i force a failure
+       command: /bin/false
+     - debug:
+         msg: 'I never execute :-('
+   always:
+     - debug:
+         msg: "This always executes, :-)"
+```
+With this tooling, some details about what runs when:
+
+* The tasks in the block are getting executed.
+* If one task of the block fails, the remaining tasks are not executed anymnore, and execution of the rescue tasks starts.
+* If the tasks within the rescue mission run through smoothly, the entire block is considered as having executed succesfully- Therefore the playbook exceution continues.
+* If a task in the rescue block fail, the entire block is considered as failed, i.e. playbook execution is stopped.
+* Always block is always executed, no matter wether block or rescue tasks failed or not.
+
+A sample with all the features (block, rescue, handlers...) can be visited in the [final version of the web.yml](https://github.com/uguroktay/ansible_essentials/blob/master/course_contents/web.yml)
+
+### Git module
+
+The git module manages git checkouts of repositories to deploy files or software. 
+
+Some notes:
+
+* It requires the git package to be installed
+* When checking out from a git repo, it expects an **empty** detination directory!
+
+```YAML
+ - name: deploy index.php
+      git:
+        repo: "{{ repository }}"
+        dest: "{{ document_root_path }}"
+```
+
+### Templating
+
+A template is a text document where some or all of the content is dynamically generated. Templates are rendered using [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) and [enhances them](https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html).
+
+With templates we can do
+
+* Variable substitution
+* Conditional statements
+* Loops
+* Filters for transforming data
+* Arithmetic calculations
+
+#### Variable replacement
+
+```YAML
+# file: template1.yml
+
+- hosts: controller
+  become: yes
+  vars:
+    var1: 'Hello Africa'
+    var2: 'Hello Asia'
+  tasks:
+  - name: Ansible Template Example
+    template:
+      src: template1.j2
+      dest: /tmp/output.txt
+```
+```text
+file: template1.j2
+
+{{ var1 }}
+Just a static line
+this line includes an inline variable - {{ var2 }} - :)
+```
+
+Some of the possible template module parameters (similar to `copy` module):
+
+* mode
+* group
+* force
+* backup
+
+Templating happens on the controller, not on the hosts!
+
+#### For loops
+
+```YAML
+# File: template2.yml
+
+- hosts: controller
+  vars:
+    mylist: ['Peach','Plum','Horse','Crocodile','Butterfly']
+  tasks:
+   - name: Template Loop example
+     template:
+       src: template2.j2
+       dest: /tmp/output.txt
+```
+
+```t
+# File: template2.j2
+
+Example of looping with a list inside a template.
+{% for item in mylist %}
+  {{ item }}
+{% endfor %} #Every item will be output on an extra line
+# To have alle the items listed on one line use:
+# {%- endfor }
+```
+
+#### if, elif, else
+
+```YAML
+- hosts: controller
+  vars:
+    logfile: /var/log/mylog.txt
+  tasks:
+  - name: Template example
+    template:
+      src: template4.j2
+      dest: /tmp/output.txt
+```
+
+```t
+# File: template4.j2
+{% if logfile is defined %}
+Log file has been defined!  
+{% endif %} 
+```
+
+Logical combinations of boolean vars:
+
+```t
+{% if logfile and logpath %}
+{% if logfile or logpath %}
+{% if not logfile %} # Evals to true if the var is not defined
+```
+
+Comparing:
+
+```t
+{% if fruit=="banana" %}
+{% if version!==2 %}
+{% if cpu_count > 5 %}
+{% if "banana" in fruits %} # Test if banana is in list fruits
+```
+
+#### Filters
+
+Filters are functions that run on a variable and produce an output. This is part of the [Jinja2 mechanisms](https://jinja.palletsprojects.com/en/2.11.x/templates/#filters). Therefore [all Jinja2 filters](https://jinja.palletsprojects.com/en/2.11.x/templates/#builtin-filters) can be used.
+
+Examples: 
+
+* `{{ myvariable | int }}` transforms the variable `myvariable` in an Integer using the `int` filter.
+* `{{ list1 | union(list2) }}`
+* You can also chain filters: `{{ mystring|capitalize|reverse }}`
+
+
+Typical use of filters:
+
+* Format data: `{{ some_variable | to_json }}`. This can be helpful for debugging. Also `to_yaml` `from_json`, `from_yaml`.
+* Manipulöate IP addresses: `{{ myvar | ipaddr }}`, `{{ myvar | ipv4 }}`, `{{ myvar | ipv6 }}`, `{{ '192.0.2.1/24' | ipaddr('address') }}`.
+* Regular expression matching: 
+
+```t
+# Search for "foo" in "foobar"
+{{ 'foobar' | regex_search('(foo)')}}
+
+# Convert "localhost:80" to "localhost"
+{{ 'localhost:80' | regex_replace(':80') }}
+```
+
+* Manipulate lists: `{{ list1 | min }}`, `{{ [3, 4, 2] | max }}`, `{{ list1 | intersect(list2) }}`
+* Defaulting variables: `{{ some_variable | default(5) }}`
+
+#### Tests
+
+Jinja2 tests evaluate tempalte expressions and return `True` or `False`.
+
+* `result is failed`
+* `variable2 is defined`
+
+Those tests can be used in the `when` section of tasks:
+
+```YAML
+- debug:
+  msg: "it failed"
+  when: result is failed
+- debug:
+  msg: "it changed"
+  when: result is changed
+- debug:
+  msg: "it succeeded"
+  when: result is succeeded 
+- debug:
+  msg: "it was skipped"
+  when: result is skipped
+```
+
+You can also use text matching or regex by using tests.
+
+Tests are used for comparisons whereas filters are used for data manipulation.

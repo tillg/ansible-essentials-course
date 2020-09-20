@@ -1,6 +1,6 @@
-
 ---
-- hosts: web
+- name: web servers
+  hosts: web
   tasks:
     - name: Install packages
       package:
@@ -9,27 +9,71 @@
       loop:
         - apache2
         - php
-    - name: Start apache server
-      service:
+        - php-mysql
+        - git
+        - lynx
+      notify: restart apache
+      tags:
+        - base
+    - name: start apache service
+      service: 
         name: apache2
         state: started
         enabled: yes
-    - name: Copy using inline data
+      tags:
+        - base
+    - name: deploy index.php
+      git:
+        repo: "{{ repository }}"
+        dest: "{{ document_root_path }}"
+      tags:
+        - content
+    - name: vhost config block
+      block:
+      - name: Copy vhost config
+        copy:
+          src: files/ansible_site.conf
+          dest: "{{ vhost_config_path }}"
+          owner: root
+          group: root
+          mode: 0644
+        notify: restart apache
+      - name: check configuration validity
+        command: apache2ctl configtest
+      rescue:
+      - name: remove bad virtual host configuration
+        file:
+          path: "{{ vhost_config_file }}"
+          state: absent
+      - name: Rolling back - ending playbook
+        fail:
+          msg: "Configuration file is not valid. Please check that before re-running the playbook"
+      tags:
+        - vhost
+    - name: Configure httpd.conf
+      lineinfile:
+        path: "{{ apache_config_file }}"
+        regexp: "^IncludeOptional"
+        line: "IncludeOptional conf.d/*.conf"
+      notify: restart apache
+      tags:
+        - vhost
+    - name: install hello world script with db
       copy:
-        src: "{{ item }}"
-        dest: /var/www/html/
-        owner: root
-        group: root
-        mode: 0644
-        backup: yes
-      loop:
-        - files/index.html
-        - files/index.php
-    - name: Delete index.html
-      file:
-        path: /var/www/html/index.html
-        state: absent
-    - name: Restart apache
+        src: files/db.php
+        #dest: "{{ document_root_path }}db.php"
+        dest: "/var/www/html/db.php"
+        mode: 0775
+      tags:
+        - content
+    # - name: allow TCP traffic
+    #   firewalld:
+    #     port: 80/tcp
+    #     permanent: true
+    #     state: enabled
+    #     immediate: true
+  handlers:
+    - name: restart apache
       service:
         name: apache2
         state: restarted

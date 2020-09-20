@@ -1,0 +1,23 @@
+global
+    maxconn     256  
+    daemon
+defaults
+    mode                    http
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         5000
+    timeout client          50000
+    timeout server          50000
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 150
+
+frontend  main
+    bind *:80
+    default_backend servers
+backend servers
+    balance     roundrobin
+{% for item in groups['web'] %}
+	server {{ item }} {{ hostvars[item]['ansible_env'].SSH_CONNECTION.split(' ')[2] }}:80 weight 10 check port 80
+{% endfor %}
+    option httpchk HEAD /index.php HTTP/1.0

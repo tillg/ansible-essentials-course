@@ -22,7 +22,7 @@ docker exec -it controller bash
 
 The different nodes of the docker-setup network run _inside_ the docker network. To get access to them, I exposed ports like so:
 
-* lb expoises it's port 80 to 1001
+* lb exposes it's port 80 to 1001, so u can access http://localhost:1001
 * web1 resp. web2 expose their port 80 to 1011 resp. 1012
 
 So to see what web2 serves, point your browser to [http://localhost:1012/](http://localhost:1012/)

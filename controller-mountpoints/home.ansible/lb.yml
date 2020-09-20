@@ -1,0 +1,45 @@
+---
+- name: gather facts for web group
+  hosts: web
+  gather_facts: true
+  tasks:
+    - debug:
+        msg: "System {{ inventory_hostname }} has uuid {{ ansible_product_uuid }}"
+    - debug: 
+        var: hostvars[inventory_hostname]['ansible_env'].SSH_CONNECTION.split(' ')[2]
+    - name: Display all variables/facts known for a host
+      debug:
+        # msg: "{{ hostvars | to_json }}"
+        # verbosity: 4
+
+- name: haproxy
+  hosts: lb
+  tasks:
+    - name: install haproxy
+      package:
+        name: haproxy
+        state: present
+    - name: start & enable haproxy
+      service:
+        name: haproxy
+        state: started
+        enabled: yes
+    - name: template out haproxy config
+      template:
+        src: templates/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+        mode: 0640
+        owner: root
+        group: root
+      notify: restart haproxy
+    # - name: allow SSH traffic
+    #   firewalld:
+    #     port: 80/tcp
+    #     permanent: true
+    #     state: enabled
+    #     immediate: true
+  handlers:
+    - name: restart haproxy
+      service:
+        name: haproxy
+        state: restarted

@@ -11,6 +11,7 @@ Should I use docker? Is there a docker-compose setup available? Vagrant is too h
 This is the lab topology my docker network needs to provide:
 ![Lab Topoology](lab-topology.png)
 
+
 ## Section 2: Ansible Foundations & Installation
 
 ### Commands
@@ -529,7 +530,6 @@ This will *revert* the failed status of the outer `block` task for the run and t
 
 #### Always and Rescue Sections
 
-
 The rescue section comes in very hadny as well: It executes only when a task ion the bvlock fails.
 
 ```YAML
@@ -751,3 +751,101 @@ Those tests can be used in the `when` section of tasks:
 You can also use text matching or regex by using tests.
 
 Tests are used for comparisons whereas filters are used for data manipulation.
+
+### Templating the HAProxy Config
+
+In this setup, [HAProxy](http://www.haproxy.org) is used as Loadbalancer. HAProxy is an Open Source Load Balancer.
+
+![Network setup](lab-topology.png)
+
+To Configure HAProxy so it distributes the requests to the 2 web servers, this is a part of the config file we need to provide:
+
+```
+defaults
+    mode                    http
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         5000
+    timeout client          50000
+    timeout server          50000
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 150
+
+frontend  main
+    bind *:80
+    default_backend servers
+backend servers
+    balance     roundrobin
+    server web1 192.168.60.6:80 weight 10 check port 80
+    server web2 192.168.60.7:80 weight 10 check port 80
+    option httpchk HEAD /index.php HTTP/1.0
+```
+
+The upper part of this configuration is static. The server section with the IP addresses of the web servers can be designed in a Jinja2 template like so:
+
+```
+backend servers
+    balance     roundrobin
+{% for item in groups['web'] %}
+    server {{ hostvars[item].ansible_facts.hostname }} {{ hostvars[item].ansible_facts.eth1.ipv4.address }}:80 weight 10 check port 80
+{% endfor %}
+    option httpchk HEAD /index.php HTTP/1.0
+```
+
+The playbook that ships the `haproxy.cfg` file to the proper location can be inspected [here](https://github.com/uguroktay/ansible_essentials/blob/master/course_contents/lb.yml).
+
+Note one interesting detail: There is an additional play at the beginning of the playbook that exists only so the facts for the web server nodes are gathered:
+
+```YAML
+- name: gather facts for web group
+  hosts: web
+  gather_facts: true
+```
+
+### Mysql & mysql user
+
+Created a `db.yml` file, as in the tutorial with little modificataions:
+
+* Skip the `become: true` statement as we don't need it on our Ubuntu nodes.
+* Use `package` module instead of `yum`.
+* Changed the package names that are to be installed. I had to search a bit and found the right way for a Ubuntu host [here](http://www.youdidwhatwithtsql.com/simple-mariadb-deployment-ansible/2311/)
+  
+### Common tasks
+
+We created a playbook for every server category we are dealing with: `web.yml`, `lb.yml`, `db.yml`. For tasks that are needed for all server categories we create an extra file called `common.yml`. This would hold tasks like installing ntp services, firewall, etc.
+
+The `common.yml` file has the following structure:
+
+```Yaml
+---
+- name: common tasks
+  hosts: all
+  become: true
+  tasks:
+    # We skip this one in our Docker setup
+    - name: update/etc/hosts file 
+
+    # Installs firewalld and ntp with a loop
+    - name: install common pckages
+  
+    - name: configure ntp
+
+    # Starts ntpd and fireqwalld with a loop
+    - name: start and enable service
+
+    # Open port SSH_port in firewalld for ansibnle
+    # We don't need this in our setup - don't ask me why...
+    - name: allow SSH traffic
+
+    # We skip this one as we use Ubuntu
+    - name: disable selinux
+
+handlers:
+    - name: restart ntp
+```
+
+### Firewalld Module
+
+Since we installed the `firewalld` package, now httpd is blocked. In order to open the corresponding ports we need to configure the firewall.
+

@@ -1,0 +1,5 @@
+db_name: demo
+db_user: demo
+db_user_password: demo
+db_user_priv: '*.*:ALL'
+db_allowed_hosts: '%'

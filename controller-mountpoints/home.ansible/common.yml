@@ -1,0 +1,29 @@
+---
+- name: common tasks
+  hosts: all
+  tasks:
+    - name: install common packages
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+          - firewalld
+          - ntp
+    - name: configure ntp
+      template:
+        src: "{{ ntp_template_file }}"
+        dest: "{{ ntp_config_file }}"
+      notify: restart ntp
+    - name: start and enable service
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - ntp
+        - firewalld
+  handlers:
+    - name: restart ntp
+      service:
+        name: ntp
+        state: restarted

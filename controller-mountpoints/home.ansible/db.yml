@@ -1,0 +1,43 @@
+---
+- name: database
+  hosts: db 
+  tasks:
+    - name: Install mariasql
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - mariadb-server
+        - mariadb-common
+        - mariadb-client
+        - python-mysqldb
+    - name: Start mysql
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+    - name: Create database
+      mysql_db:
+        name: "{{ db_name }}"
+        state: present
+        collation: utf8_general_ci
+    - name:  Create a database user
+      mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_user_password }}"
+        priv: "{{ db_user_priv }}"
+        host: "{{ db_allowed_hosts }}"
+        state: present
+    - name:  Allow localhost
+      mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_user_password }}"
+        priv: "{{ db_user_priv }}"
+        host: localhost
+        state: present
+    - name: Copy sample data
+      copy:
+        src: files/dump.sql
+        dest: /tmp/dump.sql
+    - name: Insert sample data
+      shell: cat /tmp/dump.sql | mysql -u "{{ db_user }}" -p"{{ db_user_password }}" demo

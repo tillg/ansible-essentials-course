@@ -14,6 +14,7 @@ RUN apt-get -y install sshpass
 RUN echo "root:root" | chpasswd
 RUN apt-get -y install nano
 RUN apt-get -y install curl
+RUN apt-get -y install iputils-ping
 
 # Place and run our specific start script
 COPY ./start-controller /bin/start

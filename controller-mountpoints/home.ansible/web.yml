@@ -15,6 +15,10 @@
       notify: restart apache
       tags:
         - base
+    - name: Delete index.html from installation
+      file:
+        path: /var/www/html/index.html
+        state: absent
     - name: start apache service
       service: 
         name: apache2
@@ -38,12 +42,18 @@
           group: root
           mode: 0644
         notify: restart apache
+      - name: Create the apache log directory if it does not exist
+        file:
+          path: /var/log/httpd/
+          state: directory
+          mode: '0744'
+
       - name: check configuration validity
         command: apache2ctl configtest
       rescue:
       - name: remove bad virtual host configuration
         file:
-          path: "{{ vhost_config_file }}"
+          path: "{{ vhost_config_path }}/ansible_site.conf"
           state: absent
       - name: Rolling back - ending playbook
         fail:

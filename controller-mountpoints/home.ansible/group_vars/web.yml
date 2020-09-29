@@ -1,4 +1,4 @@
-vhost_config_path: /etc/apache2/sites-enabled/
+vhost_config_path: /etc/apache2/conf-enabled/
 apache_config_file: /etc/apache2/apache2.conf
 document_root_path: /var/www/ansible/
 repository: https://github.com/uguroktay/ansible_essentials.git

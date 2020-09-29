@@ -34,6 +34,9 @@
         - content
     - name: vhost config block
       block:
+      - name: This is where we will copy the config file. 
+        debug:
+          msg: "{{ vhost_config_path }}"
       - name: Copy vhost config
         copy:
           src: files/ansible_site.conf
@@ -47,7 +50,6 @@
           path: /var/log/httpd/
           state: directory
           mode: '0744'
-
       - name: check configuration validity
         command: apache2ctl configtest
       rescue:
@@ -72,7 +74,7 @@
       copy:
         src: files/db.php
         #dest: "{{ document_root_path }}db.php"
-        dest: "/var/www/html/db.php"
+        dest: "{{ document_root_path }}"
         mode: 0775
       tags:
         - content

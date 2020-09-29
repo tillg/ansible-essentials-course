@@ -849,3 +849,32 @@ handlers:
 
 Since we installed the `firewalld` package, now httpd is blocked. In order to open the corresponding ports we need to configure the firewall.
 
+### Tags
+
+You can tag tasks, groups or entire playbooks like so:
+
+```yaml
+    - name: start apache service
+      service: 
+        name: httpd
+        state: started
+        enabled: yes
+      tags:
+        - base
+        - web
+```
+
+You can select to run only tasks with a certain tag: `ansible-playbook web.yml --tag base`. Or run the tasks that have one of many tags: `ansible-playbook web.yml --tag "base, web"`. Or you can skip the tasks with a certain tag: `ansible-playbook web.yml --skip-tag base`
+
+To see what taks and tags are in a playbook: `ansible-playbook web.yml --list-tags`.
+
+Tags are inherited, i.e. when a group is tagged, all the contained tasks are tagged.
+
+## Section 5:Reusable Playbooks
+
+To structure larger Playbooks we have
+
+* Includes
+* Import
+* Roles
+

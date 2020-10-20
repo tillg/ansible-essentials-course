@@ -19,13 +19,6 @@
       file:
         path: /var/www/html/index.html
         state: absent
-    - name: start apache service
-      service: 
-        name: apache2
-        state: started
-        enabled: yes
-      tags:
-        - base
     - name: deploy index.php
       git:
         repo: "{{ repository }}"
@@ -34,42 +27,29 @@
         - content
     - name: vhost config block
       block:
-      - name: This is where we will copy the config file. 
-        debug:
-          msg: "{{ vhost_config_path }}"
-      - name: Copy vhost config
+      - name: Copy conf file to dir of available sites
+      # Note: In the Ubunutu / Apache2 configtutorial they suggest to copy a 
+      #       a default config file and edit it line by line. We simply created 
+      #       a minimal config file.
         copy:
           src: files/ansible_site.conf
-          dest: "{{ vhost_config_path }}"
+          dest: "{{ sites_available_dir }}ansible.conf"
           owner: root
           group: root
           mode: 0644
+        tags:
+          - test
         notify: restart apache
-      - name: Create the apache log directory if it does not exist
-        file:
-          path: /var/log/httpd/
-          state: directory
-          mode: '0744'
-      - name: check configuration validity
-        command: apache2ctl configtest
-      rescue:
-      - name: remove bad virtual host configuration
-        file:
-          path: "{{ vhost_config_path }}/ansible_site.conf"
-          state: absent
-      - name: Rolling back - ending playbook
-        fail:
-          msg: "Configuration file is not valid. Please check that before re-running the playbook"
-      tags:
-        - vhost
-    - name: Configure httpd.conf
-      lineinfile:
-        path: "{{ apache_config_file }}"
-        regexp: "^IncludeOptional"
-        line: "IncludeOptional conf.d/*.conf"
-      notify: restart apache
-      tags:
-        - vhost
+      - name: Activating VirtualHostFile
+        command: 
+          cmd: a2ensite ansible.conf
+          chdir: "{{ sites_available_dir }}"
+        tags:
+          - test
+        notify: restart apache
+
+    # End of the vhost config block
+
     - name: install hello world script with db
       copy:
         src: files/db.php
@@ -78,6 +58,8 @@
         mode: 0775
       tags:
         - content
+        - test
+        
     # - name: allow TCP traffic
     #   firewalld:
     #     port: 80/tcp

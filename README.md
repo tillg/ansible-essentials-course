@@ -4,6 +4,8 @@ Ny notes and stuff used while following the [Ansible Essentials](https://www.ude
 
 Github repo that contains stuff from author is [here](https://github.com/uguroktay/ansible_essentials).
 
+My current work notes and my to do list are maintained [here](todo.md).
+
 ## Section 1: Introduction
 
 Should I use docker? Is there a docker-compose setup available? Vagrant is too heavy...But creating the docker env is extra work and means adding extra challenges. OK, let's do it...[here](./docker/readme.md) is the docker setup & it's explanation.
@@ -435,13 +437,13 @@ In our sample:
 #### Summary
 
 * Handlers are like other regular tasks but they only execute when notified by a change.
-* Handlers are referenced by their name that must  be globally unique
-* Regardless of how many tasks notify a handler, it will only run once after all the tasks complete in a particular play
-* A task can call multiple handlers
+* Handlers are referenced by their name that must be globally unique.
+* Regardless of how many tasks notify a handler, it will only run once after all the tasks complete in a particular play.
+* A task can call multiple handlers.
 
 ### Error Handling
 
-* When a task fails on a remote machine, processing stops fo that host in Ansible.
+* When a task fails on a remote machine, processing stops for that host in Ansible.
 
 A sample on how to check if the Apache configuration file is valid: In order to check the config file on the host running the httpd service you would run `httpd -t`. So the Ansible task that checks it would look like this:
 
@@ -710,7 +712,7 @@ Examples:
 Typical use of filters:
 
 * Format data: `{{ some_variable | to_json }}`. This can be helpful for debugging. Also `to_yaml` `from_json`, `from_yaml`.
-* Manipulöate IP addresses: `{{ myvar | ipaddr }}`, `{{ myvar | ipv4 }}`, `{{ myvar | ipv6 }}`, `{{ '192.0.2.1/24' | ipaddr('address') }}`.
+* Manipulate IP addresses: `{{ myvar | ipaddr }}`, `{{ myvar | ipv4 }}`, `{{ myvar | ipv6 }}`, `{{ '192.0.2.1/24' | ipaddr('address') }}`.
 * Regular expression matching: 
 
 ```t

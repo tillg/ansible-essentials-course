@@ -18,6 +18,7 @@ To connect to the controller via a terminal:
 ```bash
 docker exec -it controller bash
 ```
+
 ### Accessing nodes
 
 The different nodes of the docker-setup network run _inside_ the docker network. To get access to them, I exposed ports like so:

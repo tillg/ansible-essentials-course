@@ -40,7 +40,18 @@
         tags:
           - test
         notify: restart apache
-      - name: Activating VirtualHostFile
+      - name: Create directory for log files 
+        file:
+          path: /var/log/httpd
+          state: directory
+      - name: Deactivating default host
+        command: 
+          cmd: a2dissite 000-default
+          chdir: "{{ sites_available_dir }}"
+        tags:
+          - test
+        notify: restart apache
+      - name: Activating host ansible.testdomain
         command: 
           cmd: a2ensite ansible.conf
           chdir: "{{ sites_available_dir }}"

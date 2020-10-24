@@ -880,3 +880,202 @@ To structure larger Playbooks we have
 * Import
 * Roles
 
+We have **task files** that contain tasks, that can be used in many playbooks. A task file could look like this:
+
+```YAML
+# my_task_file.yaml
+- name: Set fact task
+  set_fact:
+    mode: "on"
+- name: debug task
+  debug:
+    msg: "mode is {{ mode }}"
+```
+
+In a playbook it can be used like this:
+
+```YAML
+- hosts: localhost
+  name: include tasks in the play
+  tasks:
+    - include_tasks: my_task_file.yaml
+```
+
+The difference between `import` and `include` is:
+
+> All `import*` statements are pre-processed at the time playbooks are parsed.
+> All `include*` statements are processed as they are encountered during playbook execution.
+
+As a result, if there is a bug (i.e. a typo) in a file that is `import`ed, the importing playbook fails right at the start - before doing anything else. If the erronous file has been `include`d, the error pops up only once the buggy file is executed - which meas that tasks before the `include` statement will have been executed. 
+
+That's why `import` statemets are referred to as _static_, while `include` statements are called _dynamic_.
+
+You can also import an entire playbook:
+
+```YAML
+---
+- name: demo import_playbook
+  hosts: localhost
+  tasks:
+    - debug:
+        msg: This is dummy1
+- name: Import a play after another play
+  import_playbook: dummy2.yaml
+```
+
+This only works on the top level. So the following script would fail - because the task that is importing is indented:
+
+```YAML
+---
+- name: demo import_playbook
+  hosts: localhost
+  tasks:
+    - debug:
+        msg: This is dummy1
+    - name: Import a play after another play
+      import_playbook: dummy2.yaml
+```
+
+The typical way of working is to start with one, long, monolythic playbook and then split it up over time in smaller sub-files.
+
+### `site.yml`
+
+If we want to deploy our entire infrastructure in one go, we can use a master file - let's call it `site.yml`:
+
+```YAML
+---
+- import_playbook: common.yml
+- import_playbook: web.yml
+- import_playbook: db.yml
+- import_playbook: lb.ymlo
+```
+
+### Roles
+
+* Roles just provide convention and organization over doing things with ansible
+  * Handlers, tasks, templates are still used with roles
+  * Roles are used within Pplay(s) inside the playbook
+* Roles are defined using YAML files within a predefined directory structure
+
+In our passed work, we placed things simply where we wanted:
+
+* WE decided to place the files under a self-created `files` sub-directory
+* WE decided to use a `templates` directory
+* etc.
+
+This organization is unknown to foreigners looking at our work and trying to make sense of it. 
+
+When using roles you still use playbooks.
+
+* Roles provide a framework for fully independant, or interdependant collections of variables, tasks, files, templates and modules.
+* You can use one or more roles within a single play.
+* Roles are sets of tasks to configure a host to serve a certain purpose like configuring a service (think of apache, NTP, SSH etc)
+* Roles have to be within playbooks
+* Target hosts are set within the playbook
+
+The **Roles directory structure**:
+
+```
+roles-example/
+├── defaults
+│   └── main.yml
+├── files
+├── handlers
+│   └── main.yml
+├── meta
+│   └── main.yml
+├── README.md
+├── tasks
+│   └── main.yml
+├── templates
+├── tests
+│   ├── inventory
+│   └── test.yml
+└── vars
+    └── main.yml
+```
+
+To create the directory strucrture:
+
+```bash
+mkdir roles
+cd roles
+ansible-galaxy init web
+# Then you have the dir structure within the web role
+```
+
+**Tasks folder** contains the tasks for that role. You can write them in one single `maon.yml` file. Or you can split them up in different files and then include them in the `main.yml`.
+
+Note that the playbook header is not used here. The `main.yml` contains **only** tasks, i-e- a list of `-name: Xyz` entries. 
+
+**Handlers folder** is of the same structure as tasks - it simply contains a `main.yml` file.
+
+**Files folder** contains files that will be transferred to the nodes. Files that are in the folder can be addressed w/o path suffix. Of course you will need paths if you have sub-directories under the `files` directory.
+
+**Templates folder** contains the j2-templates. Again, no paths need to be specified...
+
+**Vars folder** conatins a `main.yml` file too (surprise! 😂). Variables declared in this file will not be overridden very easily. That's the difference to *defaults*. It is good practice to namespace your var names.
+
+**Defaults folder** contains a `main.yml` file in which default values for variables. Those variables can easily be overriden by other users of your role. An example of variables that should go here are ports.
+
+**Meta folder** contains a `main.yml` that contains 2 sections:
+
+* `galaxy_info` contains info for the galaxy server
+* `dependencies` lists other roles that are needed by your role. Role dependencies are always executed before the role itself - and can in turn execute other dependencies...
+
+[**Ansible Galaxy**](https://galaxy.ansible.com) is a site to share and find roles provided by the community.
+
+Once we have migrated all our playbooks to roles, this is what our `site.yml` looks like:
+
+```YAML
+---
+- hosts: all
+  become: true
+  roles:
+    - common
+- hosts: web
+  become: true
+  roles:
+    - web
+- hosts: db
+  become: true
+  roles:
+    - db
+- hosts: lb
+  become: true
+  roles:
+    - lb
+```
+Note: These roles are `import`ed, i.e. they are treeted as static imports. If you want to control wether th role is imported or included, use `import_role` or `include_role`.
+
+In order to call roles that are not in your direct `roles` sub-directory, you ca also call the like this: 
+
+```YAML
+---
+- hosts: web
+  roles:
+    - role: '/path/to/my/roles/common'
+```
+
+To pass variables to roles from within the paybook:
+
+```YAML
+---
+- hosts: web
+  roles:
+    - role: web
+      vars:
+        haproxy_backend_weight: 100
+    - role: common
+```
+
+Roles can also be executed conditionally:
+
+```YAML
+---
+- hosts: someservers
+  roles:
+    - include_role: 
+      name: myrole
+      when: "ansible_facts['os_family']" == "RedHat"
+```
